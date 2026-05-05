@@ -169,7 +169,7 @@ spec:
           volumeMounts:
             - name: appsettings
               readOnly: true
-              mountPath: /usr/share/nginx/html/configs/app-config.prod.json
+              mountPath: /etc/plantsuite/app-config.json
               subPath: appsettings-ui.json
       volumes:
         - name: appsettings
