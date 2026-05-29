@@ -16,6 +16,8 @@ spec:
           envFrom:
             - secretRef:
                 name: plantsuite-env
+            - secretRef:
+                name: plantsuite-gateway-env
           env:
             - name: NODE_NAME
               valueFrom:
@@ -88,6 +90,8 @@ spec:
               readOnly: true
               mountPath: /app/appsettings.json
               subPath: appsettings.json
+            - name: data
+              mountPath: /var/lib/plantsuite
             - name: license
               readOnly: true
               mountPath: /etc/plantsuite
@@ -104,7 +108,9 @@ spec:
               protocol: TCP
           envFrom:
             - secretRef:
-                name: plantsuite-mes-env
+                name: plantsuite-env
+            - secretRef:
+                name: plantsuite-gateway-env
           env:
             - name: NODE_NAME
               valueFrom:
@@ -131,6 +137,13 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.serviceAccountName
+            - name: appsettings_GatewayServer
+              value: "http://localhost:80/api/v1/"
+            - name: appsettings_InstanceName
+              valueFrom:
+                secretKeyRef:
+                  name: plantsuite-gateway-env
+                  key: Instance__Name
           resources:
             requests:
               cpu: 50m
@@ -166,11 +179,6 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 30
-          volumeMounts:
-            - name: appsettings
-              readOnly: true
-              mountPath: /etc/plantsuite/app-config.json
-              subPath: appsettings-ui.json
       volumes:
         - name: appsettings
           configMap:
@@ -178,8 +186,9 @@ spec:
             items:
               - key: appsettings.json
                 path: appsettings.json
-              - key: appsettings-ui.json
-                path: appsettings-ui.json
+        - name: data
+          persistentVolumeClaim:
+            claimName: gateway-data
         - name: license
           secret:
             secretName: plantsuite-license

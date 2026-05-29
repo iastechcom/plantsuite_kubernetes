@@ -17,7 +17,7 @@ declare -a SVC_NAMES=(
 
 declare -a SVC_GROUP=(
     "IoT" "MES" "IoT" "IoT" "IoT"
-    "MES" "MES" "IoT" "IoT" "MES"
+    "IoT" "MES" "IoT" "IoT" "MES"
     "IoT" "IoT" "IoT" "IoT" "IoT"
     "MES" "IoT"
 )

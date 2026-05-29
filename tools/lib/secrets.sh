@@ -451,8 +451,51 @@ update_plantsuite_env() {
   klog "Arquivo atualizado: $env_file"
 }
 
+update_gateway_env() {
+  local gw_env_file="k8s/base/plantsuite/gateway/appsettings.env"
+
+  klog "Atualizando secrets do gateway..."
+  sanitize_env_file "$gw_env_file"
+
+  local instance_id instance_name localauth_user localauth_pass
+  instance_id=$(get_env_value "$gw_env_file" "Instance__Id")
+  instance_name=$(get_env_value "$gw_env_file" "Instance__Name")
+  localauth_user=$(get_env_value "$gw_env_file" "LocalAuth__Username")
+  localauth_pass=$(get_env_value "$gw_env_file" "LocalAuth__Password")
+
+  if [ -z "$instance_id" ]; then
+    instance_id=$(cat /proc/sys/kernel/random/uuid)
+  fi
+  if [ -z "$instance_id" ]; then
+    error "Não foi possível gerar UUID para Instance__Id do gateway."
+    return 1
+  fi
+
+  if [ -z "$instance_name" ]; then
+    error "Instance__Name do gateway não configurado. Defina o valor em k8s/base/plantsuite/gateway/appsettings.env antes de instalar."
+    return 1
+  fi
+
+  [ -z "$localauth_user" ] && localauth_user="admin"
+
+  if [ -z "$localauth_pass" ]; then
+    localauth_pass=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+  fi
+  if [ -z "$localauth_pass" ]; then
+    error "Não foi possível gerar senha para LocalAuth__Password do gateway."
+    return 1
+  fi
+
+  set_env_value "$gw_env_file" "Instance__Id" "$instance_id"
+  set_env_value "$gw_env_file" "Instance__Name" "$instance_name"
+  set_env_value "$gw_env_file" "LocalAuth__Username" "$localauth_user"
+  set_env_value "$gw_env_file" "LocalAuth__Password" "$localauth_pass"
+
+  klog "Arquivo atualizado: $gw_env_file"
+}
+
 # TODO TEMPORÁRIO (MES): Extrai o tenantId do certificado de licença.
-# Os serviços MES antigos (controlstations, gateway, wd, production) não concatenam
+# Os serviços MES antigos (controlstations, wd, production) não concatenam
 # tenantId ao usuário MQTT no código. Esse workaround permite ao instalador
 # injetar a env var correta em formato "{tenantId}:system" diretamente no Kubernetes.
 # NOTA: Aplica o patch via kubectl set env após o deploy - nenhum arquivo YAML é alterado.
@@ -485,20 +528,19 @@ extract_tenant_id_from_license() {
 # após o appsettings.json, então o secret plantsuite-env (com User=system) sobrescreve.
 # O patch é feito em 3 etapas: scale-to-0 → kubectl set env → scale-back.
 # Isso evita que 2 pods subam em paralelo durante o rollout (用户体验更好).
-# NOTA: gateway e wd têm container sidecar UI - usamos -c para targetar só o principal.
+# NOTA: wd tem container sidecar UI - usamos -c para targetar só o principal.
 # REMOVER quando os serviços migrarem para o padrão novo.
 patch_mes_mqtt_user_env() {
   local svc="$1"
 
   case "$svc" in
-    controlstations|gateway|wd|production) ;;
+    controlstations|wd|production) ;;
     *) return 0 ;;
   esac
 
   local container env_var
   case "$svc" in
     controlstations) container="controlstations"; env_var="MessageBus__MQTT__User" ;;
-    gateway)         container="gateway";         env_var="MessageBus__MQTT__User" ;;
     wd)              container="wd";              env_var="MQTT__User" ;;
     production)      container="production";      env_var="MessageBus__MQTT__User" ;;
   esac

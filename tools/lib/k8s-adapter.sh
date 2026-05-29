@@ -583,15 +583,15 @@ real_execute_step() {
   if [[ "$step_id" == plantsuite-service:* ]]; then
     local svc="${step_id#plantsuite-service:}"
     # TODO TEMPORÁRIO (MES): Patch MQTT User via kubectl set env.
-    # Os serviços MES antigos (controlstations, gateway, wd, production) não concatenam
+    # Os serviços MES antigos (controlstations, wd, production) não concatenam
     # tenantId ao usuário MQTT no código. O Configuration do .NET carrega env vars
     # após appsettings.json, então o secret plantsuite-env (User=system) sobrescreve.
     # Solução: apply → scale-to-0 → kubectl set env → scale-back → wait.
     # O scale-to-0 evita que 2 pods subam em paralelo durante o rollout.
-    # NOTA: gateway e wd têm sidecar UI - o patch usa -c para targetar o container principal.
+    # NOTA: wd tem sidecar UI - o patch usa -c para targetar o container principal.
     # REMOVER quando os serviços migrarem para o padrão novo (concatenar tenantId no código).
     case "$svc" in
-      controlstations|gateway|wd|production)
+      controlstations|wd|production)
         local svc_base="k8s/base/plantsuite/${svc}/"
         local component_path
         component_path=$(real_get_component_path "$svc_base")
@@ -762,6 +762,7 @@ real_execute_step() {
       ;;
     plantsuite-base)
       update_plantsuite_env
+      update_gateway_env
       if [[ "${UPDATE_MODE:-false}" == "true" ]]; then
         real_apply_and_ensure_restart "k8s/base/plantsuite/" "plantsuite" "plantsuite" "300s" || return $?
       else

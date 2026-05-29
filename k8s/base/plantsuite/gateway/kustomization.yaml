@@ -9,15 +9,20 @@ labels:
 
 resources:
   - deployment.yaml
+  - pvc.yaml
   - virtualservice.yaml
   - pdb.yaml
   - service.yaml
+
+secretGenerator:
+  - name: plantsuite-gateway-env
+    envs:
+      - appsettings.env
 
 configMapGenerator:
   - name: gateway-appsettings
     files:
       - appsettings.json
-      - appsettings-ui.json
 
 generatorOptions:
   disableNameSuffixHash: true
