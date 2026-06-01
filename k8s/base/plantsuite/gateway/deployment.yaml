@@ -99,6 +99,8 @@ spec:
               mountPath: /etc/ssl/certs/ca-certificates.crt
               subPath: ca.crt
               readOnly: true
+            - name: opc-ua-certs
+              mountPath: /app/OPC Foundation
         - name: gateway-ui
           image: plantsuite.azurecr.io/plantsuite-gateway-ui:latest
           imagePullPolicy: IfNotPresent
@@ -137,8 +139,6 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.serviceAccountName
-            - name: GatewayServer
-              value: "http://localhost:8080/api/v1/"
           resources:
             requests:
               cpu: 50m
@@ -196,6 +196,8 @@ spec:
             items:
               - key: ca.crt
                 path: ca.crt
+        - name: opc-ua-certs
+          emptyDir: {}
       imagePullSecrets:
         - name: plantsuite-cr
       restartPolicy: Always
