@@ -86,16 +86,20 @@ real_get_component_path() {
 real_apply_kustomize_path() {
   local component_path="$1"
   local name="$2"
-  local max_retries=3
-  local retry_delay=10
+  local max_retries=5
+  local retry_delay=20
   local attempt=1
 
   while true; do
     real_set_status_detail "Aplicando ${name} (tentativa ${attempt}/${max_retries})..."
     local error_output
     local exit_code
-    error_output=$(kubectl kustomize --enable-helm "$component_path" 2>&1 | kubectl apply --server-side --force-conflicts -f - 2>&1)
+    local _kustomize_err; _kustomize_err=$(mktemp)
+    error_output=$(kubectl kustomize --enable-helm "$component_path" 2>"$_kustomize_err" | kubectl apply --server-side --force-conflicts -f - 2>&1)
     exit_code=$?
+    local _kustomize_stderr; _kustomize_stderr=$(cat "$_kustomize_err" 2>/dev/null || true)
+    rm -f "$_kustomize_err"
+    [[ -n "$_kustomize_stderr" ]] && error_output="$_kustomize_stderr"$'\n'"$error_output"
 
     if [[ $exit_code -eq 0 ]]; then
       real_set_status_detail "$name aplicado com sucesso"
@@ -331,7 +335,20 @@ real_apply_plantsuite_service() {
     real_apply_and_ensure_restart "$component_path" "plantsuite/$svc" "plantsuite" "300s" || return $?
   else
     real_apply_kustomize_path "$component_path" "plantsuite/$svc" || return $?
-    real_wait_rollouts_from_path "$component_path" "plantsuite" "plantsuite/$svc" || return $?
+    local _pull_wait=0
+    while [[ $_pull_wait -lt 600 ]]; do
+      local _waiting_reason
+      _waiting_reason=$(kubectl get pods -n plantsuite -l "app=$svc" \
+        -o jsonpath='{.items[0].status.initContainerStatuses[0].state.waiting.reason}{.items[0].status.containerStatuses[0].state.waiting.reason}' 2>/dev/null)
+      if [[ "$_waiting_reason" == "ContainerCreating" ]]; then
+        real_set_status_detail "Puxando imagem de $svc... aguarde"
+        sleep 10
+        _pull_wait=$((_pull_wait + 10))
+      else
+        break
+      fi
+    done
+    real_wait_rollouts_from_path "$component_path" "plantsuite" "plantsuite/$svc" "600s" || return $?
   fi
   return 0
 }
@@ -655,6 +672,8 @@ real_execute_step() {
       ;;
     cert-manager-issuers)
       real_apply_component "k8s/base/cert-manager/issuers/" "cert-manager/issuers" || return $?
+      real_set_status_detail "Aguardando estabilização do cert-manager (15s)..."
+      sleep 15
       ;;
     istio-system)
       if [[ "${UPDATE_MODE:-false}" == "true" ]]; then
@@ -680,6 +699,16 @@ real_execute_step() {
         real_apply_component "k8s/base/istio-ingress/" "istio-ingress" || return $?
         real_set_status_detail "Aguardando gateway do istio-ingress..."
         wait_deployment_ready "istio-ingress" "app=gateway" "gateway" "istio-ingress gateway" || return $?
+        real_set_status_detail "Aguardando emissão do certificado wildcard pelo cert-manager..."
+        local _cert_elapsed=0
+        while [[ $_cert_elapsed -lt 120 ]]; do
+          if kubectl get secret plantsuite-wildcard-cert -n istio-ingress >/dev/null 2>&1; then
+            klog "Certificado wildcard emitido."
+            break
+          fi
+          sleep 5
+          _cert_elapsed=$((_cert_elapsed + 5))
+        done
       fi
       ;;
     aspire)
@@ -761,7 +790,9 @@ real_execute_step() {
       fi
       ;;
     plantsuite-base)
-      update_plantsuite_env
+      if ! _should_skip_infra "mongodb"; then
+        update_plantsuite_env
+      fi
       update_gateway_env
       if [[ "${UPDATE_MODE:-false}" == "true" ]]; then
         real_apply_and_ensure_restart "k8s/base/plantsuite/" "plantsuite" "plantsuite" "300s" || return $?
@@ -769,6 +800,16 @@ real_execute_step() {
         real_apply_component "k8s/base/plantsuite/" "plantsuite" || return $?
         real_set_status_detail "Validando rollouts de plantsuite..."
         real_wait_rollouts_from_path "k8s/base/plantsuite/" "plantsuite" "plantsuite" "300s" || return $?
+        real_set_status_detail "Aguardando sincronização do certificado CA (ca-certificates)..."
+        local _ca_elapsed=0
+        while [[ $_ca_elapsed -lt 120 ]]; do
+          if kubectl get secret ca-certificates -n plantsuite >/dev/null 2>&1; then
+            klog "Secret ca-certificates disponível."
+            break
+          fi
+          sleep 5
+          _ca_elapsed=$((_ca_elapsed + 5))
+        done
       fi
       ;;
     plantsuite-delete)

@@ -42,6 +42,13 @@ declare -a INFRA_COMPONENTS=(
 )
 INFRA_COUNT=${#INFRA_COMPONENTS[@]}
 
+# Infra nunca necessária quando somente gateway é selecionado
+declare -a GATEWAY_INFRA_NEVER=("mongodb" "keycloak" "redis" "postgresql")
+# Infra opcional quando somente gateway é selecionado (perguntada ao usuário)
+declare -a GATEWAY_INFRA_OPTIONAL=("rabbitmq" "vernemq" "metrics-server" "aspire")
+# Infra a pular no pipeline (preenchida por screen-infra-optional.sh)
+declare -a GATEWAY_INFRA_SKIP=()
+
 INSTALLER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 # ── Compatibilidade ──────────────────────────────────────────────────────────

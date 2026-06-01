@@ -53,6 +53,7 @@ trap 'rm -f "$_TMPFILE"' EXIT
 source "$REAL_DIR/screen-context.sh"
 source "$REAL_DIR/screen-overlay.sh"
 source "$REAL_DIR/screen-services.sh"
+source "$REAL_DIR/screen-infra-optional.sh"
 source "$REAL_DIR/screen-confirmation.sh"
 source "$REAL_DIR/screen-update-selection.sh"
 source "$REAL_DIR/screen-confirmation-update.sh"
@@ -119,6 +120,22 @@ while true; do
       fi
       [[ -z "$SELECTED_SERVICES" ]] && { printf '\n[INFO] Nenhum serviço selecionado. Abortando.\n\n'; exit 0; }
       export SELECTED_SERVICES
+      step=35
+      ;;
+    35)
+      GATEWAY_INFRA_SKIP=()
+      GATEWAY_INFRA_NEVER=("mongodb" "keycloak" "redis" "postgresql")
+      if [[ "${SELECTED_SERVICES:-}" == "gateway" ]]; then
+        : > "$_TMPFILE"
+        RESULT_FILE="$_TMPFILE" run_screen_infra_optional
+        local _result35; _result35=$(cat "$_TMPFILE" 2>/dev/null || true)
+        if [[ "$_result35" == "__QUIT__" ]]; then exit 0; fi
+        if [[ "$_result35" == "__BACK__" ]]; then step=3; continue; fi
+        IFS=' ' read -ra GATEWAY_INFRA_SKIP <<< "$_result35"
+      else
+        GATEWAY_INFRA_NEVER=()
+      fi
+      export GATEWAY_INFRA_SKIP GATEWAY_INFRA_NEVER
       step=4
       ;;
     4)

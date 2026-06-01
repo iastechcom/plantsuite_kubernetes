@@ -17,7 +17,7 @@ _is_terminal() {
 
 _clear_line() {
   if _is_terminal; then
-    _clear_line
+    printf '\r\033[K'
   fi
 }
 

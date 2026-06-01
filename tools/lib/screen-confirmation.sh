@@ -27,11 +27,17 @@ count_selected_services() {
 build_infra_entries() {
     INFRA_ENTRIES=()
 
-    local component src
+    local component src skip s
     while IFS= read -r component; do
+        skip=0
+        for s in "${GATEWAY_INFRA_NEVER[@]:-}" "${GATEWAY_INFRA_SKIP[@]:-}"; do
+            [[ "$s" == "$component" ]] && { skip=1; break; }
+        done
+        [[ $skip -eq 1 ]] && continue
         src="$(infra_source_for_overlay "$component")"
         INFRA_ENTRIES+=("$component [$src]")
     done < <(printf '%s\n' "${INFRA_COMPONENTS[@]}" | sort)
+    INFRA_COUNT=${#INFRA_ENTRIES[@]}
 }
 
 draw_infra_grid() {

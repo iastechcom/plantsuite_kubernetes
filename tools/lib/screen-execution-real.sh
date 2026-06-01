@@ -404,6 +404,7 @@ run_screen_execution_real() {
       if ! real_execute_step "${REAL_STEP_IDS[$i]}"; then
         echo "[ERRO] ${REAL_STEP_LABELS[$i]}"
         echo "$REAL_LAST_ERROR"
+        [[ -n "${REAL_LAST_DETAIL:-}" ]] && echo "Detalhe: $REAL_LAST_DETAIL"
         [[ -n "${RESULT_FILE:-}" ]] && echo "failed" > "$RESULT_FILE" || echo "failed"
         return
       fi
