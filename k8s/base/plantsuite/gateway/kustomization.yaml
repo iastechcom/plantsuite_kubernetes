@@ -29,6 +29,6 @@ generatorOptions:
 
 images:
   - name: plantsuite.azurecr.io/plantsuite-gateway
-    newTag: 2.0.0
+    newTag: pr-1014.5
   - name: plantsuite.azurecr.io/plantsuite-gateway-ui
-    newTag: 2.0.0
+    newTag: pr-1014.5
