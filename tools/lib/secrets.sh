@@ -546,7 +546,7 @@ patch_mes_mqtt_user_env() {
   local container env_var
   case "$svc" in
     controlstations) container="controlstations"; env_var="MessageBus__MQTT__User" ;;
-    wd)              container="wd";              env_var="MQTT__User" ;;
+    wd)              container="wd";              env_var="MessageBus__MQTT__User" ;;
     production)      container="production";      env_var="MessageBus__MQTT__User" ;;
   esac
 
