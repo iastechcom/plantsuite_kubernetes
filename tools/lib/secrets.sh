@@ -362,7 +362,10 @@ update_plantsuite_env() {
   if [ -z "$pg_pass" ]; then
     if [ "$UPDATE_MODE" = true ] && [ -n "$existing_pg_conn" ] && echo "$existing_pg_conn" | grep -q "Password="; then
       warning "postgresql/plantsuite-ppgc-pguser-vernemq indisponível; preservando senha local do PostgreSQL em modo update."
-      pg_pass=$(echo "$existing_pg_conn" | sed -n 's|.*Password=\([^;]*\).*|\1|p')
+      pg_pass=$(echo "$existing_pg_conn" | sed -n "s|.*Password='\([^']*\)'.*|\1|p")
+      if [ -z "$pg_pass" ]; then
+        pg_pass=$(echo "$existing_pg_conn" | sed -n 's|.*Password=\([^;]*\).*|\1|p')
+      fi
     fi
   fi
   if [ -z "$pg_pass" ]; then
@@ -371,14 +374,15 @@ update_plantsuite_env() {
   fi
 
   local pg_conn
+  local pg_pass_quoted="${pg_pass//\'/\'\'}"
   if [ -n "$existing_pg_conn" ]; then
     if echo "$existing_pg_conn" | grep -q "Password="; then
-      pg_conn=$(echo "$existing_pg_conn" | sed "s|Password=[^;]*|Password=${pg_pass}|")
+      pg_conn=$(echo "$existing_pg_conn" | sed "s|Password=[^;']*|Password='${pg_pass_quoted}'|")
     else
-      pg_conn="${existing_pg_conn};Password=${pg_pass}"
+      pg_conn="${existing_pg_conn};Password='${pg_pass_quoted}'"
     fi
   else
-    pg_conn="Host=plantsuite-ppgc-pgbouncer.postgresql.svc.cluster.local;Port=5432;Database=vernemq;Username=vernemq;Password=${pg_pass};Minimum Pool Size=10;Maximum Pool Size=10"
+    pg_conn="Host=plantsuite-ppgc-pgbouncer.postgresql.svc.cluster.local;Port=5432;Database=vernemq;Username=vernemq;Password='${pg_pass_quoted}';Minimum Pool Size=10;Maximum Pool Size=10"
   fi
   set_env_value "$env_file" "Database__Postgresql__ConnectionString" "$pg_conn"
 
