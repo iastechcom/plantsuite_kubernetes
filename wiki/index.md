@@ -25,6 +25,7 @@ Workspace knowledge base for the PlantSuite Kubernetes deployment stack.
 - [Istio Ambient Mode](decisions/istio-ambient-mode.md) — why no sidecar
 - [Percona Operators](decisions/percona-operators.md) — why Percona for DBs
 - [Self-Signed Certificates](decisions/self-signed-certificates.md) — why self-signed issuer
+- [Redis Readiness Probe — Branch-Aware](decisions/redis-readiness-probe-branch-aware.md) — standalone vs cluster probe branching
 
 ## Skill Candidates
 - [Kustomize Overlay Creation](skill-candidates/kustomize-overlay-creation.md) — adding new environments
