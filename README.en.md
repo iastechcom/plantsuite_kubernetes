@@ -85,3 +85,95 @@ After installation, services are exposed via Istio Gateway with the following do
 - **Aspire Dashboard**: `aspire-dashboard.plantsuite.local`
 - **API Devices**: `devices.plantsuite.local`
 - **API Entities**: `entities.plantsuite.local`
+- **API Queries**: `queries.plantsuite.local`
+- **API Tenants**: `tenants.plantsuite.local`
+- **API Dashboards**: `dashboards.plantsuite.local`
+- **API Notifications**: `notifications.plantsuite.local`
+- **API Alarms**: `alarms.plantsuite.local`
+- **API SPC**: `spc.plantsuite.local`
+- **API Timeseries**: `timeseries.plantsuite.local`
+
+**MQTT Services**
+- **VerneMQ (MQTT)**: `mqtt.plantsuite.local` (ports 1883/8883)
+- **VerneMQ WebSocket**: `mqtt.plantsuite.local/mqtt`
+
+### Get the Istio Ingress Gateway IP
+
+```bash
+kubectl get svc -n istio-ingress gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
+
+If using a local cluster (kind, minikube, etc.) without LoadBalancer, use NodePort:
+
+```bash
+kubectl get svc -n istio-ingress gateway
+```
+
+### Configure Local DNS
+
+Add entries to the `/etc/hosts` file (Linux/macOS) or `C:\Windows\System32\drivers\etc\hosts` (Windows), replacing `<INGRESS_IP>` with the IP obtained above:
+
+```
+<INGRESS_IP> gateway.plantsuite.local
+<INGRESS_IP> gateway-ui.plantsuite.local
+<INGRESS_IP> account.plantsuite.local
+<INGRESS_IP> alarms.plantsuite.local
+<INGRESS_IP> aspire-dashboard.plantsuite.local
+<INGRESS_IP> dashboards.plantsuite.local
+<INGRESS_IP> devices.plantsuite.local
+<INGRESS_IP> entities.plantsuite.local
+<INGRESS_IP> mqtt.plantsuite.local
+<INGRESS_IP> notifications.plantsuite.local
+<INGRESS_IP> portal.plantsuite.local
+<INGRESS_IP> queries.plantsuite.local
+<INGRESS_IP> spc.plantsuite.local
+<INGRESS_IP> tenants.plantsuite.local
+<INGRESS_IP> timeseries.plantsuite.local
+```
+
+### Trust the SSL Certificate
+
+Certificates are generated automatically by [cert-manager](https://cert-manager.io) using a self-signed ClusterIssuer. To access services via HTTPS without security errors, you need to extract the CA certificate and add it as trusted:
+
+**Extract the CA certificate:**
+```bash
+kubectl get secret plantsuite-wildcard-cert -n istio-ingress -o jsonpath='{.data.ca\.crt}' | base64 -d > plantsuite-ca.crt
+```
+
+**Import into browser/system:**
+
+- **Linux (Chrome, Chromium, Edge)**: These browsers use the operating system's trust store.
+  1. Copy the certificate and update the trust store:
+     ```bash
+     sudo cp plantsuite-ca.crt /usr/local/share/ca-certificates/plantsuite-ca.crt
+     sudo update-ca-certificates
+     ```
+     Confirm with `1 added, 0 removed; done.`.
+  2. Close and reopen the browser.
+
+- **macOS**:
+  1. Open `plantsuite-ca.crt`.
+  2. Add it to Keychain Access, marking it as "Always trust".
+
+- **Windows (Chrome, Edge)**:
+  1. Double-click the `plantsuite-ca.crt` file.
+  2. Click "Install Certificate...".
+  3. Choose "Local Machine" (requires administrator) → Next.
+  4. Choose "Place all certificates in the following store".
+  5. Click "Browse" and select "Trusted Root Certification Authorities".
+  6. Next → Finish. Confirm the security warning with "Yes".
+  7. Close and reopen the browser.
+
+- **Firefox (any OS)**: Firefox maintains its own certificate store, separate from the system.
+  1. Open Firefox and type `about:preferences` in the address bar.
+  2. Go to "Privacy & Security" → "Certificates" → "View Certificates".
+  3. In the "Authorities" tab, click "Import".
+  4. Select the `plantsuite-ca.crt` file.
+  5. Check "Trust this CA to identify websites" and click OK.
+
+> **Production environment**: in production, configure a valid certificate on the network (e.g., Let's Encrypt or corporate CA) so that browsers trust the certificate without needing manual import on each machine. This manual import step is only required for demonstration/staging environments.
+
+After configuring, access the services directly via browser or API tools:
+- Portal: `https://portal.plantsuite.local`
+- Keycloak Admin: `https://account.plantsuite.local`
+- Aspire Dashboard: `https://aspire-dashboard.plantsuite.local`
