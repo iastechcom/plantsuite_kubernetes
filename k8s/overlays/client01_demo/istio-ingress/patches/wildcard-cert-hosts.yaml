@@ -1,0 +1,6 @@
+- op: replace
+  path: /spec/commonName
+  value: "*.mes.client01"
+- op: replace
+  path: /spec/dnsNames/0
+  value: "*.mes.client01"

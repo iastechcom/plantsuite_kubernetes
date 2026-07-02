@@ -12,3 +12,15 @@ patches:
     target:
       kind: Deployment
       name: gateway
+  - path: patches/gateway-hosts.yaml
+    target:
+      kind: Gateway
+      name: gateway
+  - path: patches/wildcard-cert-hosts.yaml
+    target:
+      kind: Certificate
+      name: plantsuite-wildcard
+  - path: patches/mqtt-cert-hosts.yaml
+    target:
+      kind: Certificate
+      name: plantsuite-mqtt

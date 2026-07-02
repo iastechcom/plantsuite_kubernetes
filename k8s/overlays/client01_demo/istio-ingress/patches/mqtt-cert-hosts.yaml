@@ -1,0 +1,6 @@
+- op: replace
+  path: /spec/commonName
+  value: "mqtt.mes.client01"
+- op: replace
+  path: /spec/dnsNames/0
+  value: "mqtt.mes.client01"

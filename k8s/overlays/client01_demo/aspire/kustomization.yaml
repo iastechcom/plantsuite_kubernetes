@@ -1,0 +1,10 @@
+namespace: aspire
+
+resources:
+  - ../../../base/aspire
+
+patches:
+  - path: patches/virtualservice-hosts.yaml
+    target:
+      kind: VirtualService
+      name: aspire-dashboard
