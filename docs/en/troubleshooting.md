@@ -15,7 +15,7 @@ Check which IP the system is resolving for the portal host:
 ```bash
 # Linux / macOS
 getent hosts portal.plantsuite.local
-# should return the gateway IP (e.g., 192.168.1.81), not the node IP
+# should return the gateway IP (for example <GATEWAY_IP>), not the node IP
 ```
 
 ```cmd
@@ -28,7 +28,7 @@ nslookup portal.plantsuite.local
 ping portal.plantsuite.local
 ```
 
-If the returned IP is the node's (e.g., `192.168.1.80`) instead of the gateway's (e.g., `192.168.1.81`), the DNS is wrong.
+If the returned IP is the node's (for example `<NODE_IP>`) instead of the gateway's (for example `<GATEWAY_IP>`), the DNS is wrong.
 
 > **Note on ping with MetalLB L2**: in clusters running MetalLB in L2 mode, the LoadBalancer VIP responds to TCP (ports 80/443/etc.) but does not respond to ICMP/ping. `ping` failing even with correct DNS is expected behavior and does not indicate an error. Use `curl` or `openssl s_client` to validate access.
 
@@ -124,12 +124,12 @@ If the returned IP is the node's (e.g., `192.168.1.80`) instead of the gateway's
 
 ## 3\. DNS resolves to the wrong IP (node vs LoadBalancer)
 
-**Symptom**: `getent hosts` or `ping` shows the node IP (e.g., `192.168.1.80`) instead of the LoadBalancer gateway IP (e.g., `192.168.1.81`).
+**Symptom**: `getent hosts` or `ping` shows the node IP (for example `<NODE_IP>`) instead of the LoadBalancer gateway IP (for example `<GATEWAY_IP>`).
 
 ### Explanation
 
-- The **node** (`.80`) is the server that manages the cluster (MicroK8s control plane, port `16443`). It does not serve browser traffic on port 443.
-- The **LoadBalancer** (`.81`) is the correct endpoint, where the Istio Gateway listens on ports `80`/`443`/`1883`/`8883`/`15021`.
+- The **node** (`<NODE_IP>`) is the server that manages the cluster. It does not serve browser traffic on port 443.
+- The **LoadBalancer** (`<GATEWAY_IP>`) is the correct endpoint, where the Istio Gateway listens on ports `80`/`443`/`1883`/`8883`/`15021`.
 - The gateway IP is assigned by MetalLB from the pool configured on the cluster.
 
 ### How to diagnose
@@ -160,9 +160,9 @@ openssl s_client -connect <NODE_IP>:443
    ```</li>
 </ol>
 
-## 4\. Redis stuck in bootstrap loop (REPLICAS=6 in demo environment)
+## 4\. Redis stuck in bootstrap loop (REPLICAS=6 with a single-replica overlay expected)
 
-**Symptom**: the `plantsuite-redis-0` Pod (namespace `redis`) is stuck in a loop in the `init-cluster` container log, repeating `[init-cluster] Waiting for plantsuite-redis-1...`, the `readinessProbe` keeps failing, and the Pod accumulates restarts. The `redis` container log shows `REPLICAS=6 PRIMARIES=3` and `Running mode=cluster`, even in a demo (single-node) cluster where only `plantsuite-redis-0` should exist.
+**Symptom**: the `plantsuite-redis-0` Pod (namespace `redis`) is stuck in a loop in the `init-cluster` container log, repeating `[init-cluster] Waiting for plantsuite-redis-1...`, the `readinessProbe` keeps failing, and the Pod accumulates restarts. The `redis` container log shows `REPLICAS=6 PRIMARIES=3` and `Running mode=cluster`, even when the intended deployment shape should run only `plantsuite-redis-0`.
 
 **Likely cause**: the StatefulSet in runtime on the cluster has `replicas=6` (the state left by a previous base/production deploy), and the demo overlay (`replicas: 1`) was never applied on top of it. The `init-cluster.sh` script reads the value `6` directly from the StatefulSet, enters the cluster-mode bootstrap path, and waits for 5 peers (`plantsuite-redis-1` through `plantsuite-redis-5`) that never come up because the environment does not provision them. The `readinessProbe` (which evaluates `cluster_state:ok` when `REPLICAS>1`) also fails, perpetuating the restart loop.
 
@@ -265,7 +265,60 @@ It should show `1/1 Running` with `READY 1/1`.
   kubectl delete pvc data-plantsuite-redis-0 -n redis
   ```
 - **`kubectl apply -k` without delete may not converge** from `replicas=6` to `replicas=1` because the Kubernetes 3-way merge preserves the runtime `replicas` field. The `delete` + `apply -k` flow is safer to correct the misalignment.
-- **Branch-aware readinessProbe (preventive hardening)**: the `readinessProbe` in `k8s/base/redis/statefulset.yaml` (lines 201-219) has been adjusted to distinguish `standalone` mode (`REPLICAS=1`) from `cluster` mode (`REPLICAS>1`), avoiding false-negative readiness in demo environments. This change is a hardening improvement and <strong>does not resolve</strong> the operational incident described above — the root cause is the misalignment between the applied overlay and the runtime state. The decision is recorded in `wiki/decisions/redis-readiness-probe-branch-aware.md` and the probe convention in `wiki/conventions/probes.md`.
+- **Branch-aware readinessProbe (preventive hardening)**: the `readinessProbe` in `k8s/base/redis/statefulset.yaml` (lines 201-219) has been adjusted to distinguish `standalone` mode (`REPLICAS=1`) from `cluster` mode (`REPLICAS>1`), avoiding false-negative readiness when a single-replica deployment is expected. This change is a hardening improvement and <strong>does not resolve</strong> the operational incident described above — the root cause is the misalignment between the applied overlay and the runtime state. The decision is recorded in `wiki/decisions/redis-readiness-probe-branch-aware.md` and the probe convention in `wiki/conventions/probes.md`.
+
+## 5\. PlantSuite services fail because `plantsuite-env` has invalid Mongo/Rabbit credentials
+
+**Symptom**: one or more PlantSuite services fail to start or keep restarting even though the operator source secrets are correct.
+
+**Likely cause**: the generated `plantsuite-env` Secret contains invalid connection strings for MongoDB and RabbitMQ, for example `mongodb://@...` and `amqp://@...`. In this failure pattern, Redis can remain healthy and unrelated.
+
+### How to diagnose
+
+Check the generated secret currently consumed by the services:
+
+```bash
+kubectl get secret plantsuite-env -n plantsuite -o jsonpath='{.data.MONGO_CONNECTION_STRING}' | base64 -d
+kubectl get secret plantsuite-env -n plantsuite -o jsonpath='{.data.RABBITMQ_CONNECTION_STRING}' | base64 -d
+```
+
+If the values start with `mongodb://@` or `amqp://@`, the credentials embedded in `plantsuite-env` are invalid.
+
+Then confirm the source secrets still have the expected credentials:
+
+```bash
+kubectl get secret mongodb-secret -n mongodb -o yaml
+kubectl get secret rabbitmq-secret -n rabbitmq -o yaml
+```
+
+If the source secrets are correct but `plantsuite-env` is not, the problem is isolated to the generated `plantsuite-env` Secret.
+
+### Cause
+
+In this failure pattern, the operator source secrets in `mongodb` and `rabbitmq` are valid, but `plantsuite-env` in namespace `plantsuite` has stale/invalid MongoDB and RabbitMQ URLs. The most likely explanation is that `plantsuite-env` was not refreshed after a previous change.
+
+### How to fix
+
+Use the installer in update mode and select at least one affected PlantSuite service for apply.
+
+When at least one PlantSuite service is selected, the installer includes `plantsuite-base` in the update, which refreshes `plantsuite-env`, then reapplies/restarts the selected services as needed.
+
+### Post-remediation (validation)
+
+Confirm the secret was regenerated with valid credentials:
+
+```bash
+kubectl get secret plantsuite-env -n plantsuite -o jsonpath='{.data.MONGO_CONNECTION_STRING}' | base64 -d
+kubectl get secret plantsuite-env -n plantsuite -o jsonpath='{.data.RABBITMQ_CONNECTION_STRING}' | base64 -d
+```
+
+The values should no longer contain `mongodb://@` or `amqp://@`.
+
+Then confirm the affected services recover:
+
+```bash
+kubectl get pods -n plantsuite
+```
 
 ## Notes
 

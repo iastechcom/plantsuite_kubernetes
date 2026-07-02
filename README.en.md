@@ -72,6 +72,7 @@ In addition to the above files, ensure the following tools are installed and ava
 Notes:
 - You need `kubectl` configured for the desired context.
 - If the stack is already installed, the install script enters update mode to reapply specific components.
+- In update mode, selecting at least one PlantSuite service to apply (for example `dashboards`, `timeseries-buffer`, or `timeseries-mqtt`) makes the installer include `plantsuite-base`, which refreshes the `plantsuite-env` Secret before reapplying/restarting the selected services.
 
 ## Service Access
 

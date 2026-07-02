@@ -72,6 +72,7 @@ Além dos arquivos acima, verifique também as ferramentas abaixo instaladas e d
 Notas:
 - Precisa de `kubectl` configurado para o contexto desejado.
 - Se o stack já estiver instalado, o install entra em modo atualização para reaplicar componentes específicos.
+- Em modo atualização, selecionar pelo menos um serviço PlantSuite para aplicar (por exemplo `dashboards`, `timeseries-buffer` ou `timeseries-mqtt`) faz o instalador incluir `plantsuite-base`, o que atualiza o Secret `plantsuite-env` antes de reaplicar/reiniciar os serviços selecionados.
 - **Ambiente recomendado**: Linux e macOS são os ambientes recomendados para executar o instalador. No Windows, use WSL2 (Windows Subsystem for Linux) para melhor performance da interface TUI. Git Bash (MSYS2) é suportado, mas a renderização da TUI pode ser mais lenta devido às limitações de emulação de terminal.
 
 ## Acesso aos Serviços
