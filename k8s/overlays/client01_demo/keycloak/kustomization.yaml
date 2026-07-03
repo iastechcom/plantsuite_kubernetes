@@ -8,3 +8,19 @@ patches:
     target:
       kind: Deployment
       name: keycloak-operator
+  - path: patches/virtualservice-hosts.yaml
+    target:
+      kind: VirtualService
+      name: plantsuite-kc
+  - path: patches/serviceentry-hosts.yaml
+    target:
+      kind: ServiceEntry
+      name: account-plantsuite-local
+  - path: patches/plantsuite-kc-hostname.yaml
+    target:
+      kind: Keycloak
+      name: plantsuite-kc
+  - path: patches/plantsuite-kc-realm-urls.yaml
+    target:
+      kind: KeycloakRealmImport
+      name: plantsuite-kc-realm
