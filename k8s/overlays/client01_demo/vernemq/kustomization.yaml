@@ -8,3 +8,7 @@ patches:
       kind: StatefulSet
       name: plantsuite-vmq
     path: patches/statefulset-ops.yaml
+  - path: patches/virtualservice-hosts.yaml
+    target:
+      kind: VirtualService
+      name: plantsuite-vmq

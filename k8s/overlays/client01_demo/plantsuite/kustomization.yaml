@@ -12,3 +12,7 @@ patches:
       kind: CronJob
       name: sync-ca-certificate
     path: ca-certificate-sync/patches/cronjob-ops.yaml
+  - path: patches/env-secret.yaml
+    target:
+      kind: Secret
+      name: plantsuite-env

@@ -1,0 +1,3 @@
+- op: replace
+  path: /data/GatewayServer
+  value: "http://gateway.mes.client01/api/v1/"

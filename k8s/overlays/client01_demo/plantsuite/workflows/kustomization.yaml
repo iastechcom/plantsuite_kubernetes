@@ -16,3 +16,7 @@ patches:
     target:
       kind: VirtualService
       name: workflows-ui
+  - path: patches/configmap-appsettings.yaml
+    target:
+      kind: ConfigMap
+      name: workflows-appsettings

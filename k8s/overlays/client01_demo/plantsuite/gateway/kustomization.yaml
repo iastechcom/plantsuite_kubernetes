@@ -16,3 +16,7 @@ patches:
     target:
       kind: VirtualService
       name: gateway-ui
+  - path: patches/secret-env.yaml
+    target:
+      kind: Secret
+      name: plantsuite-gateway-env

@@ -12,3 +12,11 @@ patches:
     target:
       kind: VirtualService
       name: mes
+  - path: patches/configmap-appsettings.yaml
+    target:
+      kind: ConfigMap
+      name: mes-appsettings
+  - path: patches/secret-env.yaml
+    target:
+      kind: Secret
+      name: plantsuite-mes-env
