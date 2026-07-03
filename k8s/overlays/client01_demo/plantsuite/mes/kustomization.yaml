@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: mes
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-mes.yaml
+    target:
+      kind: VirtualService
+      name: mes

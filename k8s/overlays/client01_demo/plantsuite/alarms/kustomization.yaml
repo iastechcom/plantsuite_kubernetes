@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: alarms
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-hosts.yaml
+    target:
+      kind: VirtualService
+      name: alarms

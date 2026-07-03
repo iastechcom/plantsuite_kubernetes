@@ -8,3 +8,11 @@ patches:
       kind: StatefulSet
       name: timeseries-mqtt
     path: patches/statefulset-ops.yaml
+  - target:
+      kind: Deployment
+      name: timeseries-mqtt
+    path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-timeseries.yaml
+    target:
+      kind: VirtualService
+      name: timeseries-mqtt

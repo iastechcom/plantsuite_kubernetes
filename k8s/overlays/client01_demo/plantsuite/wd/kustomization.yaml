@@ -8,3 +8,11 @@ patches:
       kind: Deployment
       name: wd
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-wd.yaml
+    target:
+      kind: VirtualService
+      name: wd
+  - path: patches/virtualservice-wd-ui.yaml
+    target:
+      kind: VirtualService
+      name: wd-ui

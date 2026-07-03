@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: queries
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-queries.yaml
+    target:
+      kind: VirtualService
+      name: queries

@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: tenants
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-tenants.yaml
+    target:
+      kind: VirtualService
+      name: tenants

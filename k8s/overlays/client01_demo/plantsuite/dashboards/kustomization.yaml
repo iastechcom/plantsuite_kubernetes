@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: dashboards
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-dashboards.yaml
+    target:
+      kind: VirtualService
+      name: dashboards

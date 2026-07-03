@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: production
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-production.yaml
+    target:
+      kind: VirtualService
+      name: production

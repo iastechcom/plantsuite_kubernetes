@@ -8,3 +8,11 @@ patches:
       kind: Deployment
       name: gateway
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-gateway.yaml
+    target:
+      kind: VirtualService
+      name: gateway
+  - path: patches/virtualservice-gateway-ui.yaml
+    target:
+      kind: VirtualService
+      name: gateway-ui

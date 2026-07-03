@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: spc
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-spc.yaml
+    target:
+      kind: VirtualService
+      name: spc

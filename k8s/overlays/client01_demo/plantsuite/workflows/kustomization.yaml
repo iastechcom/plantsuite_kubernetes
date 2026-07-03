@@ -8,3 +8,11 @@ patches:
       kind: Deployment
       name: workflows
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-workflows.yaml
+    target:
+      kind: VirtualService
+      name: workflows
+  - path: patches/virtualservice-workflows-ui.yaml
+    target:
+      kind: VirtualService
+      name: workflows-ui

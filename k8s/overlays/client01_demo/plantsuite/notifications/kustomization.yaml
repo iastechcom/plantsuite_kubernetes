@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: notifications
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-notifications.yaml
+    target:
+      kind: VirtualService
+      name: notifications

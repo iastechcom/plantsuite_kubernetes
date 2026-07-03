@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: entities
     path: patches/deployment-ops.yaml
+  - path: patches/virtualservice-entities.yaml
+    target:
+      kind: VirtualService
+      name: entities
