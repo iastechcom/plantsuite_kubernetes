@@ -1,3 +1,0 @@
-- op: replace
-  path: /spec/hosts/0
-  value: "tenants.mes.client01"

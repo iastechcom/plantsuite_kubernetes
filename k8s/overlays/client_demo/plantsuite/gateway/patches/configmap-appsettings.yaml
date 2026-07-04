@@ -1,0 +1,3 @@
+- op: replace
+  path: /data/GatewayServer
+  value: "http://gateway.plantsuite.client/api/v1/"

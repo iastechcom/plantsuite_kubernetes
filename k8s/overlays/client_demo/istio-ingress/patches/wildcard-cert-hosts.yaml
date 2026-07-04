@@ -1,0 +1,6 @@
+- op: replace
+  path: /spec/commonName
+  value: "*.plantsuite.client"
+- op: replace
+  path: /spec/dnsNames/0
+  value: "*.plantsuite.client"

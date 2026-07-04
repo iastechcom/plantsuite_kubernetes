@@ -1,0 +1,12 @@
+- op: replace
+  path: /spec/servers/0/hosts/0
+  value: "*.plantsuite.client"
+- op: replace
+  path: /spec/servers/1/hosts/0
+  value: "*.plantsuite.client"
+- op: replace
+  path: /spec/servers/2/hosts/0
+  value: "mqtt.plantsuite.client"
+- op: replace
+  path: /spec/servers/3/hosts/0
+  value: "mqtt.plantsuite.client"

@@ -1,0 +1,3 @@
+- op: replace
+  path: /spec/hostname/hostname
+  value: "account.plantsuite.client"

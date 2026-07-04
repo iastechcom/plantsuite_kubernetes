@@ -1,3 +1,0 @@
-- op: replace
-  path: /spec/hosts/0
-  value: "workflows-ui.mes.client01"

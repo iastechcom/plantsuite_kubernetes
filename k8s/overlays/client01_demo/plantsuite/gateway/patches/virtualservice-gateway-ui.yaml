@@ -1,3 +1,0 @@
-- op: replace
-  path: /spec/hosts/0
-  value: "gateway-ui.mes.client01"
